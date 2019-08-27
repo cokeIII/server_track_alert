@@ -35,15 +35,28 @@ connection.query('SELECT * from maps', function(err, rows, fields) {
 });
 
 app.post("/insertUser",function(req,res){
-  connection.query('insert into users (user_id,name,phone_number,device_id) values("'+req.body.idCard+'","'+req.body.userName+'","'+req.body.phoneNumber+'","'+req.body.deviceId+'")', function(err, result) {
+  let insertRow = 0
+  connection.query('SELECT * from users where user_id = "'+req.body.idCard+'"', function(err, rows, fields) {
     if (!err){
-      console.log(req.body)
-      res.json({status: "OK"});
+      console.log(rows)
+      if(rows.length == 0){
+        connection.query('insert into users (user_id,name,phone_number,device_id) values("'+req.body.idCard+'","'+req.body.userName+'","'+req.body.phoneNumber+'","'+req.body.deviceId+'")', function(err, result) {
+          if (!err){
+            if(result.affectedRows)
+            res.json({status: "Success"})
+          }
+          else
+            res.json({status: "Fail"})
+        });  
+      } else 
+        res.json({status:"DuplicateUser"})
     }
-    else
-      console.log('Error while performing Query.');
-    });
+    else{
+      console.log('Error while performing Query.')
+    }
   });
+
+});
 
 
 app.listen(3001);
