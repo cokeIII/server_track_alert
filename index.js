@@ -35,8 +35,7 @@ connection.query('SELECT * from maps', function(err, rows, fields) {
 });
 
 app.post("/insertUser",function(req,res){
-  let insertRow = 0
-  connection.query('SELECT * from users where user_id = "'+req.body.idCard+'"', function(err, rows, fields) {
+  connection.query('SELECT * from users where device_id = "'+req.body.deviceId+'"', function(err, rows, fields) {
     if (!err){
       console.log(rows)
       if(rows.length == 0){
@@ -49,13 +48,35 @@ app.post("/insertUser",function(req,res){
             res.json({status: "Fail"})
         });  
       } else 
-        res.json({status:"DuplicateUser"})
-    }
+        // res.json({status:"DuplicateUser"})
+        console.log("DuplicateUser")
+        connection.query('update users set user_id = "'+req.body.idCard+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
+          if (!err){
+            if(result.affectedRows)
+            res.json({status: "Success"})
+          }
+          else
+            res.json({status: "Fail"})
+        });      
+      }
     else{
       console.log('Error while performing Query.')
     }
   });
 
+});
+
+app.post("/updateUser",function(req,res){
+    connection.query('update users set user_id = "'+req.body.deviceId+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
+      if (!err){
+        if(result.affectedRows)
+          console.log("update Success")
+          res.json({status: "Success"})
+      }
+      else
+        console.log("update Fail")
+        res.json({status: "Fail"})
+    });      
 });
 
 
