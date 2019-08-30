@@ -41,24 +41,29 @@ app.post("/insertUser",function(req,res){
       if(rows.length == 0){
         connection.query('insert into users (user_id,name,phone_number,device_id) values("'+req.body.idCard+'","'+req.body.userName+'","'+req.body.phoneNumber+'","'+req.body.deviceId+'")', function(err, result) {
           if (!err){
-            if(result.affectedRows)
-            res.json({status: "Success"})
+            if(result.affectedRows){
+              res.json({status: "Success"})
+            }
           }
-          else
+          else {
             res.json({status: "Fail"})
+          }
         });  
-      } else 
+      } else {
         // res.json({status:"DuplicateUser"})
         console.log("DuplicateUser")
         connection.query('update users set user_id = "'+req.body.idCard+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
           if (!err){
-            if(result.affectedRows)
-            res.json({status: "Success"})
+            if(result.affectedRows){
+              res.json({status: "Success"})
+            }
           }
-          else
+          else{
             res.json({status: "Fail"})
+          }
         });      
       }
+    }
     else{
       console.log('Error while performing Query.')
     }
@@ -67,18 +72,64 @@ app.post("/insertUser",function(req,res){
 });
 
 app.post("/updateUser",function(req,res){
-    connection.query('update users set user_id = "'+req.body.deviceId+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
+    connection.query('update users set user_id = "'+req.body.idCard+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
       if (!err){
-        if(result.affectedRows)
+        if(result.affectedRows){
           console.log("update Success")
-          res.json({status: "Success"})
+          res.json({statuss: "Success"})
+        }
       }
-      else
-        console.log("update Fail")
+      else{
+        console.log(err)
         res.json({status: "Fail"})
+      }
+    });
+    connection.on('error', function(err) {
+      console.log("[mysql error]",err);
     });      
 });
 
+app.post("/updateUserLog",function(req,res){
+
+  connection.query('SELECT * from user_log where device_id = "'+req.body.deviceId+'"', function(err, rows, fields) {
+    if (!err){
+      console.log(rows)
+      if(rows.length == 0){
+        console.log("insert")
+        connection.query('insert into user_log (device_id,uuid,status) values("'+req.body.deviceId+'","'+req.body.uuid+'","traveling")', function(err, result) {
+          if (!err){
+            if(result.affectedRows){
+              console.log("insert log Success")
+              res.json({status: "Success"})
+            }
+          }
+          else{
+            console.log("insert log Fail")
+            res.json({status: "Fail"})
+          }
+        });       
+      } else {
+        // res.json({status:"DuplicateUser"})
+        console.log("DuplicateLog")
+        connection.query('update user_log set uuid = "'+req.body.uuid+'", date_time = "NOW()", status = "'+req.body.status+'" where log_id = "'+rows[0].log_id+'"', function(err, result) {
+          if (!err){
+            if(result.affectedRows){
+              console.log("update log Success")
+              res.json({status: "Success"})
+            }
+          }
+          else{
+            console.log("update log Success")
+            res.json({status: "Fail"})
+          }
+        });      
+      }
+    }
+    else{
+      console.log('Error while performing Query.')
+    }
+  });     
+});
 
 app.listen(3001);
 // connection.end();
