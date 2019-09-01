@@ -33,17 +33,7 @@ connection.query('SELECT * from maps', function(err, rows, fields) {
   });
 });
 app.get("/",function(req,res){
-  connection.query('SELECT * from maps', function(err, rows, fields) {
-    if (!err){
-      var data = {
-        Value:"Qmav3u1WBShGemucCZP8C9PiLzaZTGZJ7byJrLDDZnkpzz"
-      }
-      //console.log('The solution is: ', rows);
-      res.json(data);
-    }
-    else
-      console.log('Error while performing Query.');
-    });
+    console.log("READY")
 });
   
 app.post("/getCountUser",function(req,res){
