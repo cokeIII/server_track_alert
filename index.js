@@ -32,7 +32,20 @@ connection.query('SELECT * from maps', function(err, rows, fields) {
     console.log('Error while performing Query.');
   });
 });
-
+app.get("/",function(req,res){
+  connection.query('SELECT * from maps', function(err, rows, fields) {
+    if (!err){
+      var data = {
+        Value:"Qmav3u1WBShGemucCZP8C9PiLzaZTGZJ7byJrLDDZnkpzz"
+      }
+      //console.log('The solution is: ', rows);
+      res.json(data);
+    }
+    else
+      console.log('Error while performing Query.');
+    });
+});
+  
 app.post("/getCountUser",function(req,res){
   console.log(req.body)
   connection.query('SELECT  user_log.*,count(user_log.log_id) as countUser ,users.device_id,users.name as userName,maps.uuid,maps.name from user_log,users,maps where date(date_time) = CURRENT_DATE and status = "traveling" and maps.route = "'+req.body.route+'" and users.device_id = user_log.device_id and maps.uuid = user_log.uuid', function(err, rows, fields) {
