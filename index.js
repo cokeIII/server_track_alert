@@ -2,7 +2,14 @@ var mysql      = require('mysql');
 var express    = require("express");
 var express = require('express');
 var bodyParser = require('body-parser');
+var multer  = require('multer')
 
+var fs = require("fs");
+if (!fs.existsSync("pic_cards")){
+  fs.mkdir("pic_cards",(r)=>{console.log(r)})
+} else {
+  console.log("path duplicate")
+}
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
@@ -10,6 +17,7 @@ var connection = mysql.createConnection({
   database : 'track_alert'
 });
 var app = express();
+
 app.use(bodyParser.json());
 connection.connect(function(err){
 if(!err) {
@@ -17,6 +25,27 @@ if(!err) {
 } else {
     console.log("Error connecting database ... nn");    
 }
+});
+
+var Storage = multer.diskStorage({
+  destination: function(req, file, callback) {
+      callback(null, "pic_cards");
+  },
+  filename: function(req, file, callback) {
+      callback(null, Date.now() + '.jpg');
+  }
+});
+var upload = multer({
+  storage: Storage
+}).none()//Field name and max count
+
+app.post("/cards", function(req, res) {
+  upload(req, res, function(err) {
+      if (err) {
+          return res.end("Something went wrong!");
+      }
+      return res.end("File uploaded sucessfully!.");
+  });
 });
 
 app.get("/maps",function(req,res){
@@ -57,7 +86,7 @@ app.post("/insertUser",function(req,res){
     if (!err){
       console.log(rows)
       if(rows.length == 0){
-        connection.query('insert into users (user_id,name,phone_number,device_id) values("'+req.body.idCard+'","'+req.body.userName+'","'+req.body.phoneNumber+'","'+req.body.deviceId+'")', function(err, result) {
+        connection.query('insert into users (user_id,name,phone_number,pic_card,device_id) values("'+req.body.idCard+'","'+req.body.userName+'","'+req.body.phoneNumber+'","'+req.body.picCard+'","'+req.body.deviceId+'")', function(err, result) {
           if (!err){
             if(result.affectedRows){
               res.json({status: "Success"})
@@ -70,7 +99,7 @@ app.post("/insertUser",function(req,res){
       } else {
         // res.json({status:"DuplicateUser"})
         console.log("DuplicateUser")
-        connection.query('update users set user_id = "'+req.body.idCard+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
+        connection.query('update users set user_id = "'+req.body.idCard+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'", pic_card= "'+req.body.picCard+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
           if (!err){
             if(result.affectedRows){
               res.json({status: "Success"})
@@ -145,6 +174,7 @@ app.post("/updateUserLog",function(req,res){
     }
   });     
 });
+
 connection.on('error', function(err) {
   console.log("[mysql error]",err);
 });      
