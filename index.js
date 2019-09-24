@@ -32,19 +32,52 @@ var Storage = multer.diskStorage({
       callback(null, "pic_cards");
   },
   filename: function(req, file, callback) {
-      callback(null, Date.now() + '.jpg');
+      callback(null, req.body.idCard + '.jpg');
   }
 });
 var upload = multer({
   storage: Storage
-}).none()//Field name and max count
+}).fields([{ name: 'idCard', maxCount: 1 }, { name: 'photo', maxCount: 1 }])
 
 app.post("/cards", function(req, res) {
   upload(req, res, function(err) {
-      if (err) {
-          return res.end("Something went wrong!");
+    console.log(req.body.deviceId)
+    if (err) {
+        return res.end("Something went wrong!");
+    }
+    connection.query('SELECT * from users where device_id = "'+req.body.deviceId+'"', function(err, rows, fields) {
+      if (!err){
+        console.log(rows)
+        if(rows.length == 0){
+          connection.query('insert into users (user_id,name,phone_number,pic_card,device_id) values("","","'+req.body.idCard+'","'+req.body.idCard+'.jpg","'+req.body.deviceId+'")', function(err, result) {
+            if (!err){
+              if(result.affectedRows){
+                res.json({status: "Success"})
+              }
+            }
+            else {
+              res.json({status: "Fail"})
+            }
+          });  
+        } else {
+          // res.json({status:"DuplicateUser"})
+          console.log("DuplicateUser")
+          connection.query('update users set user_id = "", name = "",phone_number = "'+req.body.idCard+'", pic_card= "'+req.body.idCard+'.jpg" where device_id = "'+req.body.deviceId+'"', function(err, result) {
+            if (!err){
+              if(result.affectedRows){
+                res.json({status: "Success"})
+              }
+            }
+            else{
+              res.json({status: "Fail"})
+            }
+          });      
+        }
       }
-      return res.end("File uploaded sucessfully!.");
+      else{
+        console.log('Error while performing Query.')
+      }
+    });
   });
 });
 
@@ -86,7 +119,7 @@ app.post("/insertUser",function(req,res){
     if (!err){
       console.log(rows)
       if(rows.length == 0){
-        connection.query('insert into users (user_id,name,phone_number,pic_card,device_id) values("'+req.body.idCard+'","'+req.body.userName+'","'+req.body.phoneNumber+'","'+req.body.picCard+'","'+req.body.deviceId+'")', function(err, result) {
+        connection.query('insert into users (user_id,name,phone_number,pic_card,device_id) values("'+req.body.idCard+'","'+req.body.userName+'","'+req.body.phoneNumber+'","","'+req.body.deviceId+'")', function(err, result) {
           if (!err){
             if(result.affectedRows){
               res.json({status: "Success"})
@@ -99,7 +132,7 @@ app.post("/insertUser",function(req,res){
       } else {
         // res.json({status:"DuplicateUser"})
         console.log("DuplicateUser")
-        connection.query('update users set user_id = "'+req.body.idCard+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'", pic_card= "'+req.body.picCard+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
+        connection.query('update users set user_id = "'+req.body.idCard+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'", pic_card= "" where device_id = "'+req.body.deviceId+'"', function(err, result) {
           if (!err){
             if(result.affectedRows){
               res.json({status: "Success"})
