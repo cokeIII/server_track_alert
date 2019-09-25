@@ -152,11 +152,13 @@ app.post("/insertUser",function(req,res){
 });
 
 app.post("/updateUser",function(req,res){
-    connection.query('update users set user_id = "'+req.body.idCard+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
+  console.log("updateUser")
+  if(req.body.picCard){
+    connection.query('update users set user_id = "'+req.body.idCard+'", name = "'+req.body.userName+'", phone_number = "'+req.body.phoneNumber+'", pic_card = "'+req.body.picCard+'" where device_id = "'+req.body.deviceId+'"', function(err, result) {
       if (!err){
         if(result.affectedRows){
           console.log("update Success")
-          res.json({statuss: "Success"})
+          res.json({status: "Success"})
         }
       }
       else{
@@ -164,6 +166,22 @@ app.post("/updateUser",function(req,res){
         res.json({status: "Fail"})
       }
     });
+} else {
+    upload(req, res, function(err) {
+      connection.query('update users set phone_number = "'+req.body.idCard+'", pic_card = "'+req.body.idCard+'.jpg" where device_id = "'+req.body.deviceId+'"', function(err, result) {
+        if (!err){
+          if(result.affectedRows){
+            console.log("update Success")
+            res.json({status: "Success"})
+          }
+        }
+        else{
+          console.log(err)
+          res.json({status: "Fail"})
+        }
+      });
+    })
+  }
 });
 
 app.post("/updateUserLog",function(req,res){
