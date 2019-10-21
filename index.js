@@ -18,6 +18,24 @@ var connection = mysql.createConnection({
 });
 var app = express();
 
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
+http.listen(3000, function(){
+      console.log('listening on *:3000');
+});
+
+io.on('connection',function(client){
+    console.log('Client connected..');
+    client.on('join',function(data){
+        console.log(data);  
+    });
+    io.sockets.emit('join',{name:"server"});
+    // setInterval(function() {
+    //   var currentDate = new Date();
+    //   io.sockets.emit('clock',{currentDate:currentDate});
+    // },1000);
+});
+
 app.use(bodyParser.json());
 connection.connect(function(err){
 if(!err) {
@@ -94,8 +112,9 @@ connection.query('SELECT * from maps', function(err, rows, fields) {
     console.log('Error while performing Query.');
   });
 });
-app.get("/",function(req,res){
+app.post("/",function(req,res){
     console.log("READY")
+    io.sockets.emit('/',{name:"test emit"});
 });
   
 app.post("/getCountUser",function(req,res){
@@ -183,9 +202,7 @@ app.post("/updateUser",function(req,res){
     })
   }
 });
-
 app.post("/updateUserLog",function(req,res){
-
   connection.query('SELECT * from user_log where device_id = "'+req.body.deviceId+'"', function(err, rows, fields) {
     if (!err){
       console.log(rows)
@@ -225,10 +242,14 @@ app.post("/updateUserLog",function(req,res){
     }
   });     
 });
+app.post("/testSocket",function(req,res){
+  res.json({status: "testSocket"})
+})
 
 connection.on('error', function(err) {
   console.log("[mysql error]",err);
 });      
 
 app.listen(3001);
+
 // connection.end();
