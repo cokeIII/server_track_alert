@@ -203,6 +203,7 @@ app.post("/updateUser",function(req,res){
   }
 });
 app.post("/updateUserLog",function(req,res){
+  console.log(req.body)
   connection.query('SELECT * from user_log where device_id = "'+req.body.deviceId+'"', function(err, rows, fields) {
     if (!err){
       console.log(rows)
@@ -212,6 +213,7 @@ app.post("/updateUserLog",function(req,res){
           if (!err){
             if(result.affectedRows){
               console.log("insert log Success")
+              io.sockets.emit('updateUserLog',req.body);
               res.json({status: "Success"})
             }
           }
@@ -227,6 +229,7 @@ app.post("/updateUserLog",function(req,res){
           if (!err){
             if(result.affectedRows){
               console.log("update log Success")
+              io.sockets.emit('updateUserLog',req.body);
               res.json({status: "Success"})
             }
           }
