@@ -10,18 +10,50 @@ if (!fs.existsSync("pic_cards")){
 } else {
   console.log("path duplicate")
 }
-var connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : '',
-  database : 'track_alert'
-});
+// var connection = mysql.createConnection({
+//     host: 'localhost',
+//     user: 'offtduac_root',
+//     password: 'Bh?aC78X',
+//     database: 'offtduac_trackalert'
+// });
+var db_config = {
+  host: 'localhost',
+  user: 'offtduac_root',
+  password: 'Bh?aC78X',
+  database: 'offtduac_trackalert'
+};
+
+var connection;
+
+function handleDisconnect() {
+  connection = mysql.createConnection(db_config); // Recreate the connection, since
+                                                  // the old one cannot be reused.
+
+  connection.connect(function(err) {              // The server is either down
+    if(err) {                                     // or restarting (takes a while sometimes).
+      console.log('error when connecting to db:', err);
+      setTimeout(handleDisconnect, 2000); // We introduce a delay before attempting to reconnect,
+    }                                     // to avoid a hot loop, and to allow our node script to
+  });                                     // process asynchronous requests in the meantime.
+                                          // If you're also serving http, display a 503 error.
+  connection.on('error', function(err) {
+    console.log('db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      handleDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+    }
+  });
+}
+
+handleDisconnect();
+
 var app = express();
 
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-http.listen(3000, function(){
-      console.log('listening on *:3000');
+http.listen(7778, function(){
+      console.log('listening on *:7778');
 });
 
 io.on('connection',function(client){
@@ -37,13 +69,13 @@ io.on('connection',function(client){
 });
 
 app.use(bodyParser.json());
-connection.connect(function(err){
-if(!err) {
-    console.log("Database is connected ... nn");    
-} else {
-    console.log("Error connecting database ... nn");    
-}
-});
+// connection.connect(function(err){
+// if(!err) {
+//     console.log("Database is connected ... nn");    
+// } else {
+//     console.log("Error connecting database ... nn");    
+// }
+// });
 
 var Storage = multer.diskStorage({
   destination: function(req, file, callback) {
@@ -59,7 +91,7 @@ var upload = multer({
 
 app.post("/cards", function(req, res) {
   upload(req, res, function(err) {
-    console.log(req.body.deviceId)
+    console.log(req.body)
     if (err) {
         return res.end("Something went wrong!");
     }
@@ -67,7 +99,7 @@ app.post("/cards", function(req, res) {
       if (!err){
         console.log(rows)
         if(rows.length == 0){
-          connection.query('insert into users (user_id,name,phone_number,pic_card,device_id) values("","","'+req.body.idCard+'","'+req.body.idCard+'.jpg","'+req.body.deviceId+'")', function(err, result) {
+          connection.query('insert into users (user_id,name,phone_number,pic_card,device_id,ble_id) values("","","'+req.body.idCard+'","'+req.body.idCard+'.jpg","'+req.body.deviceId+'","'+req.body.bleId+'")', function(err, result) {
             if (!err){
               if(result.affectedRows){
                 res.json({status: "Success"})
@@ -93,7 +125,7 @@ app.post("/cards", function(req, res) {
         }
       }
       else{
-        console.log('Error while performing Query++++.')
+        console.log('Error while performing Query.')
       }
     });
   });
@@ -119,7 +151,7 @@ app.post("/",function(req,res){
   
 app.post("/getCountUser",function(req,res){
   console.log(req.body)
-  connection.query('SELECT  user_log.*,count(user_log.log_id) as countUser ,users.device_id,users.name as userName,maps.uuid,maps.name from user_log,users,maps where date(date_time) = CURRENT_DATE and status = "traveling" and maps.route = "'+req.body.route+'" and users.device_id = user_log.device_id and maps.uuid = user_log.uuid', function(err, rows, fields) {
+  connection.query('SELECT  user_log.*,count(user_log.log_id) as countUser ,users.phone_number,users.device_id,users.name as userName,maps.uuid,maps.name from user_log,users,maps where date(date_time) = CURRENT_DATE and status = "traveling" and maps.route = "'+req.body.route+'" and users.device_id = user_log.device_id and maps.uuid = user_log.uuid', function(err, rows, fields) {
     if (!err){
       var data = {
         userData:rows
@@ -134,11 +166,12 @@ app.post("/getCountUser",function(req,res){
 });
   
 app.post("/insertUser",function(req,res){
+  console.log(req.body)
   connection.query('SELECT * from users where device_id = "'+req.body.deviceId+'"', function(err, rows, fields) {
     if (!err){
       console.log(rows)
       if(rows.length == 0){
-        connection.query('insert into users (user_id,name,phone_number,pic_card,device_id) values("'+req.body.idCard+'","'+req.body.userName+'","'+req.body.phoneNumber+'","","'+req.body.deviceId+'")', function(err, result) {
+        connection.query('insert into users (user_id,name,phone_number,pic_card,device_id,ble_id) values("'+req.body.idCard+'","'+req.body.userName+'","'+req.body.phoneNumber+'","","'+req.body.deviceId+'","'+req.body.ble_Id+'")', function(err, result) {
           if (!err){
             if(result.affectedRows){
               res.json({status: "Success"})
@@ -245,14 +278,46 @@ app.post("/updateUserLog",function(req,res){
     }
   });     
 });
-app.post("/testSocket",function(req,res){
-  res.json({status: "testSocket"})
+app.get("/allBlue",function(req,res){
+  console.log(req.body)
+  
+  res.json({status: "Get Success OK",reqBody:req.body})
+})
+app.post("/allBlue",async function(req,res){
+  console.log(req.body)
+  let dataIo = {}
+  for(var index in req.body.message.ipdata) {
+    var value = req.body.message.ipdata[index].toString()
+    connection.query('SELECT (select device_id from users where ble_id = "'+value.replace(/:/g,'')+'") as deviceID, (select uuid from maps where uuid = "'+value+'") as uuids', function(err, rows, fields) {
+      if (!err){
+        if(rows[0]){
+          console.log(rows[0])
+          if(rows[0].deviceID != null) {
+            dataIo.deviceId = rows[0].deviceID
+          }
+          if(rows[0].uuids != null){
+            dataIo.uuid = rows[0].uuids
+          }
+          dataIo.status = "traveling"
+          console.log(dataIo)
+          if(dataIo.uuid != null && dataIo.deviceId != null){
+            connection.query('update user_log set uuid = "'+dataIo.uuid+'", status = "traveling", date_time = CURRENT_TIMESTAMP where device_id = "'+dataIo.deviceId+'"', function(err, result) {
+              if (!err){
+                io.sockets.emit('updateUserLog',dataIo)        
+              }
+            })
+          }
+        }     
+      } 
+    })
+  }
+  res.json({status: "Post Success OK",reqBody:req.body})
 })
 
 connection.on('error', function(err) {
   console.log("[mysql error]",err);
 });      
 
-app.listen(3001);
+app.listen(7777);
 
 // connection.end();
