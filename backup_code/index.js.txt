@@ -151,7 +151,7 @@ app.post("/",function(req,res){
   
 app.post("/getCountUser",function(req,res){
   console.log(req.body)
-  connection.query('SELECT  user_log.*,count(user_log.log_id) as countUser ,users.phone_number,users.device_id,users.name as userName,maps.uuid,maps.name from user_log,users,maps where date(date_time) = CURRENT_DATE and status = "traveling" and maps.route = "'+req.body.route+'" and users.device_id = user_log.device_id and maps.uuid = user_log.uuid', function(err, rows, fields) {
+  connection.query('SELECT  user_log.* ,users.phone_number,users.device_id,users.name as userName,maps.uuid,maps.name from user_log,users,maps where date(date_time) = CURRENT_DATE and status = "traveling" and maps.route = "'+req.body.route+'" and users.device_id = user_log.device_id and maps.uuid = user_log.uuid', function(err, rows, fields) {
     if (!err){
       var data = {
         userData:rows
