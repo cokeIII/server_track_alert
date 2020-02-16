@@ -99,7 +99,7 @@ app.post("/cards", function(req, res) {
       if (!err){
         console.log(rows)
         if(rows.length == 0){
-          connection.query('insert into users (user_id,name,phone_number,pic_card,device_id,ble_id) values("","","'+req.body.idCard+'","'+req.body.idCard+'.jpg","'+req.body.deviceId+'","'+req.body.bleId+'")', function(err, result) {
+          connection.query('insert into users (user_id,name,phone_number,pic_card,device_id,ble_id) values("","","'+req.body.phoneNumber+'","'+req.body.phoneNumber+'.jpg","'+req.body.deviceId+'","'+req.body.bleId+'")', function(err, result) {
             if (!err){
               if(result.affectedRows){
                 res.json({status: "Success"})
@@ -112,7 +112,7 @@ app.post("/cards", function(req, res) {
         } else {
           // res.json({status:"DuplicateUser"})
           console.log("DuplicateUser")
-          connection.query('update users set user_id = "", name = "",phone_number = "'+req.body.idCard+'", pic_card= "'+req.body.idCard+'.jpg" where device_id = "'+req.body.deviceId+'"', function(err, result) {
+          connection.query('update users set user_id = "", name = "",phone_number = "'+req.body.phoneNumber+'", pic_card= "'+req.body.phoneNumber+'.jpg" where device_id = "'+req.body.deviceId+'"', function(err, result) {
             if (!err){
               if(result.affectedRows){
                 res.json({status: "Success"})
